@@ -1,33 +1,30 @@
 clc; clear; close all;
 
 % Read video
-videoReader = VideoReader('test.mp4'); % Replace with your video
+videoReader = VideoReader('test.mp4'); 
 
-% Background subtraction model (optimized)
+
 foregroundDetector = vision.ForegroundDetector(...
     'NumGaussians', 5, ...
     'NumTrainingFrames', 150, ...
-    'MinimumBackgroundRatio', 0.8); % Balanced filtering
+    'MinimumBackgroundRatio', 0.8); 
 
-% Create video player
 videoPlayer = vision.VideoPlayer('Position', [100, 100, 600, 400]);
 
 while hasFrame(videoReader)
     frame = readFrame(videoReader);
-    frame = imgaussfilt(frame, 1.5); % Smooth noise while preserving movement
+    frame = imgaussfilt(frame, 1.5); 
 
-    % Apply background subtraction
+
     foregroundMask = step(foregroundDetector, frame);
 
-    % Morphological processing
     foregroundMask = imopen(foregroundMask, strel('disk', 5)); % Remove small noise
     foregroundMask = imclose(foregroundMask, strel('disk', 15)); % Fill holes
     foregroundMask = bwareaopen(foregroundMask, 1000); % Remove objects <1000 px
 
-    % Get object properties
+   
     stats = regionprops(foregroundMask, 'BoundingBox', 'Area', 'MajorAxisLength', 'MinorAxisLength');
 
-    % Filter out unwanted detections
     filteredBoxes = [];
     for i = 1:length(stats)
         aspectRatio = stats(i).MajorAxisLength / stats(i).MinorAxisLength;
@@ -42,7 +39,7 @@ while hasFrame(videoReader)
         outputFrame = insertShape(outputFrame, 'Rectangle', filteredBoxes(i, :), 'Color', 'red', 'LineWidth', 3);
     end
 
-    % Display
+ 
     step(videoPlayer, outputFrame);
 end
 
